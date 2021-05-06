@@ -1,7 +1,7 @@
 import json
 import sys
 
-FILE_NAME = "data.json"
+FILE_NAME = "../data/data.json"
 
 
 class Products:

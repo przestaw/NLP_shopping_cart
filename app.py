@@ -1,7 +1,7 @@
 from flask import Flask, request, abort
 
-from processor import Processor
-from products import Products
+from shop_cart_nlp.processor import Processor
+from shop_cart_nlp.products import Products
 
 app = Flask(__name__)
 
