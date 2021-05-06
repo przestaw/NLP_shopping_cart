@@ -16,7 +16,7 @@ class Processor:
 
     @classmethod
     def tokenize(cls, string: str) -> []:
-        # NOTE : tokenizer may be changed - api i the same
+        # NOTE : tokenizer may be changed - api stays the same
         return word_tokenize(string)
 
     @classmethod
@@ -48,7 +48,7 @@ class Processor:
             self.index.append({'product': prod, 'stems': stems})
 
     def get_products_for_shopping_list(self, shopping_list):
-        # TODO : angielski
+        # TODO : angielski XD
         #          -> wyszukanie liczności [jeśli brak to pewnie zakładamy 1]
         #          -> zapytanie przez zbiory odwrtone [po stemach] każdej linijki "szoping list"
         #          -> zwracamy {"count" : xd, "product" : <ten najczęściej trafiony stemem>
