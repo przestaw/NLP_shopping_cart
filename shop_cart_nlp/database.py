@@ -1,4 +1,5 @@
 import sqlite3
+from typing import List
 
 from shop_cart_nlp.objects import Product, Stem
 
@@ -30,15 +31,16 @@ class DBaccess:
     # NOTE :
     #        queries may be static and allocated once !!!
 
-    def __init__(self, url='../data/db.sqlite'):
-        self.con = sqlite3.connect(url)
+    def __init__(self, url='data/db.sqlite'):
+        self.url = url
 
     def test_db(self):
         """
         Check if table products exists
         :return: True if exists
         """
-        cur = self.con.cursor()
+        con = sqlite3.connect(self.url)
+        cur = con.cursor()
         res = cur.execute(self.test_query)
         cur.close()
         return res.rowcount > 0
@@ -50,7 +52,8 @@ class DBaccess:
         """
         if not self.test_db():
             # one transaction
-            cur = self.con.cursor()
+            con = sqlite3.connect(self.url)
+            cur = con.cursor()
             cur.execute(self.create_prod)
             cur.execute(self.create_stem)
             cur.execute(self.create_prod_stem)
@@ -74,7 +77,8 @@ class DBaccess:
         else:
             raise RuntimeError("Not a valid stem")
 
-        cur = self.con.cursor()
+        con = sqlite3.connect(self.url)
+        cur = con.cursor()
 
         cur.execute("INSERT INTO stem(value) "
                     "VALUES (?);",
@@ -84,25 +88,40 @@ class DBaccess:
         cur.connection.commit()
         cur.close()
 
-    def add_product(self, product: Product):
+    def add_products(self, products: List[Product]):
         """
         Insert a product if product with same name does not exist
-        :param product: Product object to be inserted
+        :param products: Product objects to be inserted
         :return: None
         """
 
-        if not isinstance(product, Product):
-            raise RuntimeError("Not a valid object")
+        if len(products) == 0:
+            return
 
-        cur = self.con.cursor()
+        if not isinstance(products[0], Product):
+            print(products[0])
+            raise RuntimeError("Not a valid object (0)")
 
-        cur.execute("INSERT INTO product(name, description) "
-                    "VALUES (?,?);",
-                    (product.name, product.description))
+        con = sqlite3.connect(self.url)
+        cur = con.cursor()
 
-        # weird commit in sqlite API
-        cur.connection.commit()
-        cur.close()
+        query = "INSERT INTO products (name, description) SELECT ?,?"
+        values = [products[0].name, products[0].description]
+
+        for i in range(1, len(products)):
+            query += " UNION ALL SELECT ?,?"
+            values.append(products[i].name)
+            values.append(products[i].description)
+
+        try:
+            cur.execute(query, values)
+
+            # weird commit in sqlite API
+            cur.connection.commit()
+        except sqlite3.IntegrityError:
+            raise RuntimeError
+        finally:
+            cur.close()
 
     def add_conn_p_s(self, product, stems: []):
         """
@@ -116,7 +135,8 @@ class DBaccess:
 
             # NOTE : product.name, stems == stet of strings
             pairs = [(product.name, s) for s in stems]
-            cur = self.con.cursor()
+            con = sqlite3.connect(self.url)
+            cur = con.cursor()
 
             cur.executemany("INSERT INTO product_stem(prod_id, stem_id) VALUES "
                             "(SELECT prod_id FROM products WHERE name = ?,"
@@ -142,7 +162,8 @@ class DBaccess:
             raise RuntimeError("Not a valid stem")
 
         products = []
-        cur = self.con.cursor()
+        con = sqlite3.connect(self.url)
+        cur = con.cursor()
 
         res = cur.execute("SELECT products.prod_id, products.name, products.description "
                           "FROM products "
@@ -165,16 +186,22 @@ class DBaccess:
         Get all products
         :return: list of products
         """
-        products = []
-        cur = self.con.cursor()
+        con = sqlite3.connect(self.url)
+        cur = con.cursor()
 
         res = cur.execute("SELECT prod_id, name, description "
                           "FROM products;")
 
-        for line in res:
-            products.append(Product(prod_id=line[0],
-                                    name=line[1],
-                                    description=line[2]))
+        products = [Product(prod_id=line[0], name=line[1], description=line[2]) for line in res]
 
         cur.close()
         return products
+
+    def remove_product(self, prod_id):
+        con = sqlite3.connect(self.url)
+        cur = con.cursor()
+
+        res = cur.execute("DELETE FROM products WHERE prod_id = ?", prod_id)
+        cur.connection.commit()
+
+        cur.close()

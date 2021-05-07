@@ -1,17 +1,15 @@
-from shop_cart_nlp.database import DBaccess
-from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
+from nltk.tokenize import word_tokenize
 
 
 class Processor:
-    # kind of a singleton - we need only one
-    database = DBaccess()
     # stoplist is common for all instances
     stoplist = stopwords.words('english')
     stemmer = PorterStemmer()
 
-    def __init__(self):
+    def __init__(self, database):
+        self.database = database
         self.index = []
 
     @classmethod
@@ -38,9 +36,9 @@ class Processor:
 
     @classmethod
     def product_to_bag_of_stems(cls, product) -> set:
-        title = cls.split_to_stems(product.title)
-        desc = cls.split_to_stems(product.desc)
-        return set.union(title, desc)  # both name and desc
+        name = cls.split_to_stems(product.name)
+        desc = cls.split_to_stems(product.description)
+        return set.union(name, desc)  # both name and desc
 
     def create_index(self, products):
         for prod in products:
