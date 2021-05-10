@@ -56,9 +56,13 @@ def complete_cart():
 
     shopping_list = request.json[shopping_list_attr]
 
-    result = processor.get_products_for_shopping_list(shopping_list)
+    result = processor.find_products_for_shopping_list(shopping_list)
 
     return {"products": result}
 
 
-app.run(debug=True)
+if __name__ == '__main__':
+    # TODO : any init steps
+
+    app.run(debug=True)
+

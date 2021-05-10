@@ -1,5 +1,5 @@
 import sqlite3
-from typing import List
+from collections.abc import Collection, Sequence
 
 from shop_cart_nlp.objects import Product, Stem
 
@@ -63,6 +63,21 @@ class DBaccess:
         else:
             raise RuntimeWarning("Database has been already initialized")
 
+    def delete_all_data(self):
+        """
+        Delete all data from database [intended for debugging and "retrain"]
+        """
+        con = sqlite3.connect(self.url)
+        cur = con.cursor()
+
+        cur.execute("DELETE FROM product_stem;")
+        cur.execute("DELETE FROM products;")
+        cur.execute("DELETE FROM stems;")
+
+        # weird commit in sqlite API
+        cur.connection.commit()
+        cur.close()
+
     def add_stem(self, stem):
         """
         Insert stem to database if not exists
@@ -81,14 +96,41 @@ class DBaccess:
         cur = con.cursor()
 
         cur.execute("INSERT INTO stem(value) "
-                    "VALUES (?);",
+                    "VALUES (?) "
+                    "ON CONFLICT IGNORE;",
                     (val,))
 
         # weird commit in sqlite API
         cur.connection.commit()
         cur.close()
 
-    def add_products(self, products: List[Product]):
+    def add_stems(self, stems: Sequence[str]):
+        """
+        Insert stem to database if not exists
+        :param stems: list of stems as strings
+        :return: None
+        """
+
+        query = "INSERT INTO stem(value) " \
+                "VALUES (?) " \
+                "ON CONFLICT IGNORE;"
+
+        values = [(val, ) for val in stems]
+
+        con = sqlite3.connect(self.url)
+        cur = con.cursor()
+
+        try:
+            cur.execute(query, values)
+
+            # weird commit in sqlite API
+            cur.connection.commit()
+        except sqlite3.IntegrityError:
+            raise RuntimeError
+        finally:
+            cur.close()
+
+    def add_products(self, products: Sequence[Product]):
         """
         Insert a product if product with same name does not exist
         :param products: Product objects to be inserted
@@ -97,10 +139,6 @@ class DBaccess:
 
         if len(products) == 0:
             return
-
-        if not isinstance(products[0], Product):
-            print(products[0])
-            raise RuntimeError("Not a valid object (0)")
 
         con = sqlite3.connect(self.url)
         cur = con.cursor()
@@ -114,7 +152,8 @@ class DBaccess:
             values.append(products[i].description)
 
         try:
-            cur.execute(query, values)
+            # NOTE : add final semicolon
+            cur.execute(query + ';', values)
 
             # weird commit in sqlite API
             cur.connection.commit()
@@ -123,14 +162,14 @@ class DBaccess:
         finally:
             cur.close()
 
-    def add_conn_p_s(self, product, stems: []):
+    def add_conn_p_s(self, product: Product, stems: Collection):
         """
         Adds connection between product and stems from its description
         :param product: Product object
         :param stems: set of stems as strings
         """
         if len(stems) != 0:
-            if not isinstance(product, Product):
+            if product.prod_id is None:
                 raise RuntimeError("Not a valid Product object")
 
             # NOTE : product.name, stems == stet of strings
@@ -201,7 +240,8 @@ class DBaccess:
         con = sqlite3.connect(self.url)
         cur = con.cursor()
 
-        res = cur.execute("DELETE FROM products WHERE prod_id = ?", prod_id)
+        res = cur.execute("DELETE FROM products "
+                          "WHERE prod_id = ?;", prod_id)
         cur.connection.commit()
 
         cur.close()
