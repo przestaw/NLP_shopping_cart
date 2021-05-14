@@ -179,7 +179,8 @@ class DBaccess:
 
             cur.executemany("INSERT INTO product_stem(prod_id, stem_id) VALUES "
                             "(SELECT prod_id FROM products WHERE name = ?,"
-                            "SELECT stem_id FROM stems WHERE value = ?);",
+                            "SELECT stem_id FROM stems WHERE value = ?)"
+                            "ON CONFLICT IGNORE;",
                             pairs)
 
             # weird commit in sqlite API
@@ -235,6 +236,26 @@ class DBaccess:
 
         cur.close()
         return products
+
+    def get_product(self, prod_id):
+        """
+        Get product for id
+        :return: product or none
+        """
+        con = sqlite3.connect(self.url)
+        cur = con.cursor()
+
+        res = cur.execute("SELECT prod_id, name, description "
+                          "FROM products WHERE prod_id = ?;",
+                          (prod_id,))
+
+        if res:
+            product = Product(prod_id=res[0][0], name=res[0][1], description=res[0][2])
+        else:
+            product = None
+
+        cur.close()
+        return product
 
     def remove_product(self, prod_id):
         con = sqlite3.connect(self.url)

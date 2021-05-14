@@ -52,13 +52,11 @@ class Processor:
             tmp_index.append({'product': prod, 'stems': stems})
 
         self.index = self.index + tmp_index
-        # FIXME : if we return tmp_index we may train in increments:
-        #              1. incrementally insert new products
-        #              2. insert stems [ignore on duplicates
-        #              3. insert connections/index
 
     def create_index_from_db(self):
         products = self.database.get_products()
+        # NOTE : if we "update" index we have no way of knowing which products were processed
+        #        hence database will ignore inserts on conflict
         self.create_index(products)
 
     def save_index_to_db(self):
@@ -79,12 +77,27 @@ class Processor:
         self.save_index_to_db()
 
     def find_best_product(self, stems: Collection):
-        # TODO : count product occurances in queries for stems
+        def increment_dict(p_dict, value):
+            if value in p_dict:
+                p_dict[value] = 1 + p_dict[value]
+            else:
+                p_dict[value] = 1
+
+        products_dict = {}
         for st in stems:
             prod_pivot = self.database.get_products_for_stem(st)
-            # TODO : update or create counters
-        # TODO : find most probable product
-        return Product(name='', description='')
+            for prod in prod_pivot:
+                increment_dict(products_dict, str(prod.prod_id))
+
+        most_prop_prod = max(products_dict, key=products_dict.get)
+
+        return self.database.get_product(most_prop_prod)
+
+    def find_count(self, position):
+        # TODO : TODO
+        pass
+        # TODO : TODO
+        return 0
 
     def find_products_for_shopping_list(self, shopping_list):
         # TODO : angielski XD
@@ -98,8 +111,8 @@ class Processor:
 
         # TODO : find counts, find stems [bag of words]
         for pos in positions:
-            count = 0
-            stems = []
+            count = self.find_count(pos)
+            stems = [] # TODO :with count removed call -> split_to_stems
             # TODO : find best product
             product = self.find_best_product(stems)
             ret_list.append({'product': product, 'count': count})
