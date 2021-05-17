@@ -1,8 +1,10 @@
-from collections.abc import Collection
+# from collections.abc import Collection
+from typing import Collection
 
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
+from quantulum3 import parser as qparser
 
 from shop_cart_nlp.database import DBaccess
 from shop_cart_nlp.objects import Product
@@ -61,9 +63,7 @@ class Processor:
 
     def save_index_to_db(self):
         # unique stems
-        stems = set()
-        for i in self.index:
-            stems = stems.union(i['stems'])  # 'stems' is set
+        stems = {s for i in self.index for s in i['stems']}
 
         # add stems - or ignore
         self.database.add_stems(stems)
@@ -93,11 +93,9 @@ class Processor:
 
         return self.database.get_product(most_prop_prod)
 
-    def find_count(self, position):
-        # TODO : TODO
-        pass
-        # TODO : TODO
-        return 0
+    def find_quantities(self, position):
+        quants = qparser.parse(position)
+        return quants[0].value if quants else 1
 
     def find_products_for_shopping_list(self, shopping_list):
         # TODO : angielski XD
@@ -105,14 +103,12 @@ class Processor:
         #          -> zapytanie przez zbiory odwrtone [po stemach] każdej linijki "szoping list"
         #          -> zwracamy {"count" : xd, "product" : <ten najczęściej trafiony stemem>
 
-        ret_list = [{'product': None, 'count': 0}]
-        # TODO : split list to positions
-        positions = []
+        ret_list = list()
 
         # TODO : find counts, find stems [bag of words]
-        for pos in positions:
-            count = self.find_count(pos)
-            stems = [] # TODO :with count removed call -> split_to_stems
+        for pos in shopping_list:
+            count = self.find_quantities(pos)
+            stems = self.split_to_stems(pos)  # TODO :with count removed call -> split_to_stems
             # TODO : find best product
             product = self.find_best_product(stems)
             ret_list.append({'product': product, 'count': count})

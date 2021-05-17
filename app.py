@@ -10,7 +10,7 @@ app = Flask(__name__)
 database = DBaccess()
 processor = Processor(database)
 
-processor.create_index(database.get_products())
+processor.learn_from_db()
 
 
 @app.route("/product", methods=['GET'])
@@ -26,17 +26,19 @@ def add_products():
             or not isinstance(request.json[products_attr], list):
         abort(400)
 
-    products = []
     try:
-        for p in request.json[products_attr]:
-            products.append(Product(p['name'], p['description']))
-    except KeyError:
-        abort(400)
+        database.add_products(
+            [Product(p["name"], p["description"]) for p in request.json[products_attr]]
+        )
+    except KeyError as e:
+        return "Invalid JSON object. The following key was not found: " + str(e), 400
+    except RuntimeError as e:
+        return "Failed to add products. Details: " + str(e), 400
 
     try:
-        database.add_products(products)
-    except RuntimeError:
-        abort(400)
+        processor.learn_from_db()
+    except Exception as e:
+        print("ERROR updating index. Exception: " + str(e))
 
     return flask.Response(status=200)
 
@@ -50,15 +52,15 @@ def delete_product(prod_id):
 @app.route("/cart", methods=['POST'])
 def complete_cart():
     shopping_list_attr = "shoppingList"
-
-    if not request.json or shopping_list_attr not in request.json:
+    if not request.json \
+            or shopping_list_attr not in request.json:
         abort(400)
 
-    shopping_list = request.json[shopping_list_attr]
+    products = processor.find_products_for_shopping_list(
+        request.json[shopping_list_attr]
+    )
 
-    result = processor.find_products_for_shopping_list(shopping_list)
-
-    return {"products": result}
+    return {"products": products}
 
 
 if __name__ == '__main__':

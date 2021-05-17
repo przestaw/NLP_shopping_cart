@@ -1,5 +1,5 @@
 import sqlite3
-from collections.abc import Collection, Sequence
+from typing import Collection
 
 from shop_cart_nlp.objects import Product, Stem
 
@@ -19,14 +19,15 @@ class DBaccess:
                   "value TEXT NOT NULL UNIQUE);"
 
     create_prod_stem = "CREATE TABLE product_stem" \
-                       "(prod_id INTEGER " \
+                       "(prod_id INTEGER UNIQUE " \
                        "REFERENCES products (prod_id) " \
                        "ON DELETE CASCADE " \
                        "ON UPDATE NO ACTION, " \
-                       "stem_id INTEGER " \
+                       "stem_id INTEGER UNIQUE " \
                        "REFERENCES stems (stem_id) " \
                        "ON DELETE CASCADE " \
-                       "ON UPDATE NO ACTION);"
+                       "ON UPDATE NO ACTION, " \
+                       "CONSTRAINT PRODUCT_STEM_PK PRIMARY KEY (prod_id, stem_id));"
 
     # NOTE :
     #        queries may be static and allocated once !!!
@@ -84,7 +85,6 @@ class DBaccess:
         :param stem: stem object or string
         :return: None
         """
-        val = None
         if isinstance(stem, Stem):
             val = stem.value
         elif isinstance(stem, str):
@@ -95,27 +95,29 @@ class DBaccess:
         con = sqlite3.connect(self.url)
         cur = con.cursor()
 
-        cur.execute("INSERT INTO stem(value) "
-                    "VALUES (?) "
-                    "ON CONFLICT IGNORE;",
+        cur.execute("INSERT OR IGNORE INTO stems (value) "
+                    "VALUES (?) ",
                     (val,))
 
         # weird commit in sqlite API
         cur.connection.commit()
         cur.close()
 
-    def add_stems(self, stems: Sequence[str]):
+    def add_stems(self, stems: Collection[str]):
         """
         Insert stem to database if not exists
         :param stems: list of stems as strings
         :return: None
         """
+        if not stems:
+            return
 
-        query = "INSERT INTO stem(value) " \
-                "VALUES (?) " \
-                "ON CONFLICT IGNORE;"
-
-        values = [(val, ) for val in stems]
+        query = "INSERT OR IGNORE INTO stems (value) VALUES"
+        values = list()
+        for s in stems:
+            query += "(?),"
+            values.append(s)
+        query = query[:-1]
 
         con = sqlite3.connect(self.url)
         cur = con.cursor()
@@ -130,30 +132,28 @@ class DBaccess:
         finally:
             cur.close()
 
-    def add_products(self, products: Sequence[Product]):
+    def add_products(self, products: Collection[Product]):
         """
-        Insert a product if product with same name does not exist
+        Insert new products, ignoring those which already exist
         :param products: Product objects to be inserted
         :return: None
         """
-
-        if len(products) == 0:
+        if not products:
             return
 
         con = sqlite3.connect(self.url)
         cur = con.cursor()
 
-        query = "INSERT INTO products (name, description) SELECT ?,?"
-        values = [products[0].name, products[0].description]
-
-        for i in range(1, len(products)):
-            query += " UNION ALL SELECT ?,?"
-            values.append(products[i].name)
-            values.append(products[i].description)
+        query = "INSERT OR IGNORE INTO products (name, description) VALUES"
+        values = list()
+        for p in products:
+            query += "(?,?),"
+            values += [p.name, p.description]
+        query = query[:-1]
 
         try:
             # NOTE : add final semicolon
-            cur.execute(query + ';', values)
+            cur.execute(query, values)
 
             # weird commit in sqlite API
             cur.connection.commit()
@@ -162,30 +162,38 @@ class DBaccess:
         finally:
             cur.close()
 
-    def add_conn_p_s(self, product: Product, stems: Collection):
+    def add_conn_p_s(self, product: Product, stems: Collection[str]):
         """
         Adds connection between product and stems from its description
         :param product: Product object
         :param stems: set of stems as strings
         """
-        if len(stems) != 0:
-            if product.prod_id is None:
-                raise RuntimeError("Not a valid Product object")
+        if not product or not stems:
+            return
 
-            # NOTE : product.name, stems == stet of strings
-            pairs = [(product.name, s) for s in stems]
-            con = sqlite3.connect(self.url)
-            cur = con.cursor()
+        con = sqlite3.connect(self.url)
+        cur = con.cursor()
 
-            cur.executemany("INSERT INTO product_stem(prod_id, stem_id) VALUES "
-                            "(SELECT prod_id FROM products WHERE name = ?,"
-                            "SELECT stem_id FROM stems WHERE value = ?)"
-                            "ON CONFLICT IGNORE;",
-                            pairs)
+        if product.prod_id is None:
+            res = cur.execute("SELECT prod_id FROM products WHERE name = ?", [product.name])
+            if res.rowcount == 0:
+                raise RuntimeError("Can't find product with name " + product.name + " in the database")
+            product.prod_id = res.fetchone()[0]
+        prod_id = product.prod_id
 
-            # weird commit in sqlite API
-            cur.connection.commit()
-            cur.close()
+        query = "INSERT OR IGNORE INTO product_stem (prod_id, stem_id) VALUES"
+        values = list()
+        for s in stems:
+            query += "(?, (SELECT stem_id FROM stems WHERE value = ?)),"
+            values += [prod_id, s]
+            print(str([prod_id, s]))
+        query = query[:-1]
+
+        cur.execute(query, values)
+
+        # weird commit in sqlite API
+        cur.connection.commit()
+        cur.close()
 
     def get_products_for_stem(self, stem):
         """
@@ -193,7 +201,6 @@ class DBaccess:
         :param stem: stem object or string
         :return: list of products
         """
-        val = None
         if isinstance(stem, Stem):
             val = stem.value
         elif isinstance(stem, str):
@@ -211,7 +218,7 @@ class DBaccess:
                           "WHERE product_stem.stem_id = ("
                           "    SELECT stem_id FROM stems WHERE value = ?"
                           ");",
-                          ('ABC',))
+                          (val,))
 
         for line in res:
             products.append(Product(prod_id=line[0],
@@ -250,7 +257,8 @@ class DBaccess:
                           (prod_id,))
 
         if res:
-            product = Product(prod_id=res[0][0], name=res[0][1], description=res[0][2])
+            row = res.fetchone()
+            product = Product(prod_id=row[0], name=row[1], description=row[2])
         else:
             product = None
 
@@ -261,8 +269,8 @@ class DBaccess:
         con = sqlite3.connect(self.url)
         cur = con.cursor()
 
-        res = cur.execute("DELETE FROM products "
-                          "WHERE prod_id = ?;", prod_id)
+        cur.execute("DELETE FROM products "
+                    "WHERE prod_id = ?;", prod_id)
         cur.connection.commit()
 
         cur.close()
