@@ -12,7 +12,9 @@ class DBaccess:
     create_prod = "CREATE TABLE products" \
                   "(prod_id INTEGER PRIMARY KEY AUTOINCREMENT," \
                   "name TEXT NOT NULL UNIQUE," \
-                  "description TEXT);"
+                  "description TEXT," \
+                  "amount REAL," \
+                  "unit TEXT );"
 
     create_stem = "CREATE TABLE stems" \
                   "(stem_id INTEGER PRIMARY KEY AUTOINCREMENT," \
@@ -157,8 +159,8 @@ class DBaccess:
 
             # weird commit in sqlite API
             cur.connection.commit()
-        except sqlite3.IntegrityError:
-            raise RuntimeError
+        except sqlite3.IntegrityError as e:
+            raise RuntimeError(e)
         finally:
             cur.close()
 
@@ -195,6 +197,34 @@ class DBaccess:
         cur.connection.commit()
         cur.close()
 
+    def save_quantities_of_products(self, products: Collection[Product]):
+        con = sqlite3.connect(self.url)
+        cur = con.cursor()
+
+        q1 = "UPDATE products " \
+             "SET amount = CASE prod_id "
+
+        q2 = "ELSE amount " \
+             "END, " \
+             "unit = CASE prod_id "
+
+        q3 = "ELSE unit " \
+             "END " \
+             "WHERE prod_id in ("
+
+        for p in products:
+            q1 += "WHEN {} THEN {} ".format(p.prod_id, p.amount)
+            q2 += "WHEN {} THEN '{}' ".format(p.prod_id, p.unit)
+            q3 += "{},".format(p.prod_id)
+
+        q3 = q3[:-1] + ")"
+
+        print(q1 + q2 + q3)
+
+        cur.execute(q1 + q2 + q3)
+        cur.connection.commit()
+        cur.close()
+
     def get_products_for_stem(self, stem):
         """
         Get all products referencing certain stem
@@ -212,18 +242,16 @@ class DBaccess:
         con = sqlite3.connect(self.url)
         cur = con.cursor()
 
-        res = cur.execute("SELECT products.prod_id, products.name, products.description "
-                          "FROM products "
-                          "JOIN product_stem ON products.prod_id = product_stem.prod_id "
-                          "WHERE product_stem.stem_id = ("
+        res = cur.execute("SELECT p.prod_id, p.name, p.description, p.amount, p.unit "
+                          "FROM products p "
+                          "JOIN product_stem ps ON p.prod_id = ps.prod_id "
+                          "WHERE ps.stem_id = ("
                           "    SELECT stem_id FROM stems WHERE value = ?"
                           ");",
                           (val,))
 
         for line in res:
-            products.append(Product(prod_id=line[0],
-                                    name=line[1],
-                                    description=line[2]))
+            products.append(Product(prod_id=line[0], name=line[1], description=line[2], amount=line[3], unit=line[4]))
 
         cur.close()
         return products
@@ -236,10 +264,13 @@ class DBaccess:
         con = sqlite3.connect(self.url)
         cur = con.cursor()
 
-        res = cur.execute("SELECT prod_id, name, description "
+        res = cur.execute("SELECT prod_id, name, description, amount, unit "
                           "FROM products;")
 
-        products = [Product(prod_id=line[0], name=line[1], description=line[2]) for line in res]
+        products = [
+            Product(prod_id=line[0], name=line[1], description=line[2], amount=line[3], unit=line[4])
+            for line in res
+        ]
 
         cur.close()
         return products
@@ -252,13 +283,13 @@ class DBaccess:
         con = sqlite3.connect(self.url)
         cur = con.cursor()
 
-        res = cur.execute("SELECT prod_id, name, description "
+        res = cur.execute("SELECT prod_id, name, description, amount, unit "
                           "FROM products WHERE prod_id = ?;",
                           (prod_id,))
 
         if res:
             row = res.fetchone()
-            product = Product(prod_id=row[0], name=row[1], description=row[2])
+            product = Product(prod_id=row[0], name=row[1], description=row[2], amount=row[3], unit=row[4])
         else:
             product = None
 

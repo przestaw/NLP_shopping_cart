@@ -1,10 +1,12 @@
 # from collections.abc import Collection
+from math import ceil
 from typing import Collection
 
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
 from quantulum3 import parser as qparser
+from quantulum3.classes import Quantity
 
 from shop_cart_nlp.database import DBaccess
 from shop_cart_nlp.objects import Product
@@ -14,6 +16,11 @@ class Processor:
     # stoplist is common for all instances
     stoplist = stopwords.words('english')
     stemmer = PorterStemmer()
+
+    not_scalable_units = [
+        "watt"
+    ]
+    dimensionless = "dimensionless"
 
     def __init__(self, database: DBaccess):
         self.database = database
@@ -47,9 +54,19 @@ class Processor:
         desc = cls.split_to_stems(product.description)
         return set.union(name, desc)  # both name and desc
 
+    def find_quantity_for_product(self, product: Product):
+        for string in product.name, product.description:
+            q = next(iter(q for q in qparser.parse(string) if q.unit not in self.not_scalable_units), None)
+            if q:
+                return q.value, q.unit
+        return 1, self.dimensionless
+
     def create_index(self, products: Collection[Product]):
         tmp_index = []
         for prod in products:
+            amount, unit = self.find_quantity_for_product(prod)
+            prod.amount = amount
+            prod.unit = unit
             stems = self.product_to_bag_of_stems(prod)
             tmp_index.append({'product': prod, 'stems': stems})
 
@@ -62,8 +79,13 @@ class Processor:
         self.create_index(products)
 
     def save_index_to_db(self):
+        # products
+        products = [i['product'] for i in self.index]
         # unique stems
         stems = {s for i in self.index for s in i['stems']}
+
+        # save quantities of products
+        self.database.save_quantities_of_products(products)
 
         # add stems - or ignore
         self.database.add_stems(stems)
@@ -95,7 +117,8 @@ class Processor:
 
     def find_quantities(self, position):
         quants = qparser.parse(position)
-        return quants[0].value if quants else 1
+        print(str(quants[0].value) + " unit: " + str(quants[0].unit) if quants else "No quants")  # Debug.
+        return quants if quants else [Quantity(1, self.dimensionless)]
 
     def find_products_for_shopping_list(self, shopping_list):
         # TODO : angielski XD
@@ -107,10 +130,20 @@ class Processor:
 
         # TODO : find counts, find stems [bag of words]
         for pos in shopping_list:
-            count = self.find_quantities(pos)
+            quants = self.find_quantities(pos)
             stems = self.split_to_stems(pos)  # TODO :with count removed call -> split_to_stems
             # TODO : find best product
             product = self.find_best_product(stems)
+            count = self.calculate_count(product, quants)
             ret_list.append({'product': product, 'count': count})
 
         return ret_list
+
+    def calculate_count(self, product, quants):
+        dimensionless_count = None
+        for q in quants:
+            if str(q.unit) == product.unit:
+                return ceil(q.value / product.amount)
+            if str(q.unit) == self.dimensionless:
+                dimensionless_count = q.value
+        return int(dimensionless_count) if dimensionless_count else int(quants[0].value)

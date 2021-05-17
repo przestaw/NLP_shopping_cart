@@ -11,6 +11,8 @@ from dataclasses_json import dataclass_json
 class Product:
     name: str
     description: str
+    amount: float = field(default=None)
+    unit: str = field(default=None)
     prod_id: int = field(default=None)
 
 
