@@ -5,3 +5,4 @@ quantulum3~=0.7.6
 numpy^=1.20.0
 scipy^=1.6.0
 sklearn
+stemming~=1.0.1

@@ -188,7 +188,7 @@ class DBaccess:
         for s in stems:
             query += "(?, (SELECT stem_id FROM stems WHERE value = ?)),"
             values += [prod_id, s]
-            print(str([prod_id, s]))
+            #print(str([prod_id, s]))
         query = query[:-1]
 
         cur.execute(query, values)
@@ -219,7 +219,7 @@ class DBaccess:
 
         q3 = q3[:-1] + ")"
 
-        print(q1 + q2 + q3)
+        #print(q1 + q2 + q3)
 
         cur.execute(q1 + q2 + q3)
         cur.connection.commit()

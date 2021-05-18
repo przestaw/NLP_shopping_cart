@@ -61,6 +61,7 @@ def complete_cart():
 
 if __name__ == '__main__':
     nltk.download('stopwords')  # if downloaded it will skip
+    nltk.download('punkt')
     # NOTE : global scope
     database = DBaccess()
     processor = Processor(database)

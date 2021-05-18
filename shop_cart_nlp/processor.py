@@ -13,7 +13,7 @@ from shop_cart_nlp.objects import Product
 
 class Processor:
     # stoplist is common for all instances
-    stoplist = stopwords.words('english')
+    stoplist = stopwords.words('english') + ['%', ';', '-', '``', '(', ')', ':', ',', '.', '']
     stemmer = PorterStemmer()
 
     not_scalable_units = [
@@ -56,7 +56,7 @@ class Processor:
         :return: array with words not present in stoplist
         """
         # NOTE : we may add our own words to stoplist
-        return [w for w in array if w not in cls.stoplist]
+        return [w for w in array if w not in cls.stoplist and not (len(w) == 1 and not w.isalnum())]
 
     @classmethod
     def apply_stemmer(cls, array: Collection[str]) -> []:
@@ -100,7 +100,7 @@ class Processor:
         """
         for string in product.name, product.description:
             q = next(iter(q for q in qparser.parse(string) if q.unit not in cls.not_scalable_units), None)
-            if q:
+            if q and q.value > 0.01:
                 return q.value, q.unit
         return 1, cls.dimensionless
 
@@ -208,7 +208,6 @@ class Processor:
                 amount = product.amount * self.dictionary.get(str(product.unit)) \
                     if self.dictionary.get(product.unit) \
                     else product.amount
-                print(amount)
                 return ceil(unit / amount * quants[0].value)
 
         # not a product unit nor non-numerical word for quantity
