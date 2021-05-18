@@ -18,7 +18,7 @@ class Product:
 
 @dataclass
 class Stem:
-    stem_id: int  # TODO may br None [unknown/not inserted]
+    stem_id: int
     value: str
 
 

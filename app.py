@@ -1,3 +1,4 @@
+import nltk
 import flask
 from flask import Flask, request, abort
 
@@ -6,11 +7,6 @@ from shop_cart_nlp.objects import Product
 from shop_cart_nlp.processor import Processor
 
 app = Flask(__name__)
-
-database = DBaccess()
-processor = Processor(database)
-
-processor.learn_from_db()
 
 
 @app.route("/product", methods=['GET'])
@@ -64,7 +60,12 @@ def complete_cart():
 
 
 if __name__ == '__main__':
+    nltk.download('stopwords')  # if downloaded it will skip
+    # NOTE : global scope
+    database = DBaccess()
+    processor = Processor(database)
+
     # TODO : any init steps
+    processor.learn_from_db()
 
     app.run(debug=True)
-
