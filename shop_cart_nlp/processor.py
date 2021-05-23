@@ -17,7 +17,10 @@ class Processor:
     stemmer = PorterStemmer()
 
     not_scalable_units = [
-        "watt",
+        "", "watt", "percentage", "yard", "year", "minute", "hour", "second", "byte", "decade", "megayear nanoseconds",
+        "furlong", "dollar", "week", "week seconds", "atomic mass unit poise farads", "centavo ounce years", "degree",
+        "milliampere nanoseconds", "inch second exaampere metres", "dime watt south african rands", "centavo", "dime watt roentgens",
+        "degree celsius"
     ]
     dimensionless = "dimensionless"
     # non-numerical words
@@ -99,9 +102,9 @@ class Processor:
         :return: pair(count, unit)
         """
         for string in product.name, product.description:
-            q = next(iter(q for q in qparser.parse(string) if q.unit not in cls.not_scalable_units), None)
+            q = next(iter(q for q in qparser.parse(string) if str(q.unit) not in cls.not_scalable_units), None)
             if q and q.value > 0.01:
-                return q.value, q.unit
+                return q.value, str(q.unit)
         return 1, cls.dimensionless
 
     def create_index(self, products: Collection[Product]):
@@ -109,15 +112,13 @@ class Processor:
         Method creating inverse stem index from collection of Products and parse product quantity
         :param products: collection of Products
         """
-        tmp_index = []
+        self.index = []
         for prod in products:
             amount, unit = self.find_quantity_for_product(prod)
             prod.amount = amount
             prod.unit = unit
             stems = self.product_to_bag_of_stems(prod)
-            tmp_index.append({'product': prod, 'stems': stems})
-
-        self.index = self.index + tmp_index
+            self.index.append({'product': prod, 'stems': stems})
 
     def create_index_from_db(self):
         """
@@ -173,9 +174,11 @@ class Processor:
             for prod in prod_pivot:
                 increment_dict(products_dict, str(prod.prod_id))
 
-        most_prop_prod = max(products_dict, key=products_dict.get)
+        if products_dict:
+            most_prob_prod = max(products_dict, key=products_dict.get)
+            return self.database.get_product(most_prob_prod)
 
-        return self.database.get_product(most_prop_prod)
+        return None
 
     def find_quantities(self, position):
         """
@@ -227,10 +230,11 @@ class Processor:
         #                   - inverse search for best product
         #                   - add to ret
         for pos in shopping_list:
-            quants = self.find_quantities(pos)
             stems = self.split_to_stems(pos)
             product = self.find_best_product(stems)
-            count = self.calculate_count(product, quants)
-            ret_list.append({'product': product, 'count': count})
+            if product:
+                quants = self.find_quantities(pos)
+                count = self.calculate_count(product, quants)
+                ret_list.append({'product': product, 'count': count})
 
         return ret_list

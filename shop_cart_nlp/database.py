@@ -21,11 +21,11 @@ class DBaccess:
                   "value TEXT NOT NULL UNIQUE);"
 
     create_prod_stem = "CREATE TABLE product_stem" \
-                       "(prod_id INTEGER UNIQUE " \
+                       "(prod_id INTEGER " \
                        "REFERENCES products (prod_id) " \
                        "ON DELETE CASCADE " \
                        "ON UPDATE NO ACTION, " \
-                       "stem_id INTEGER UNIQUE " \
+                       "stem_id INTEGER " \
                        "REFERENCES stems (stem_id) " \
                        "ON DELETE CASCADE " \
                        "ON UPDATE NO ACTION, " \
@@ -188,7 +188,6 @@ class DBaccess:
         for s in stems:
             query += "(?, (SELECT stem_id FROM stems WHERE value = ?)),"
             values += [prod_id, s]
-            #print(str([prod_id, s]))
         query = query[:-1]
 
         cur.execute(query, values)
