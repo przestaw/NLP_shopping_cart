@@ -9,9 +9,29 @@ from shop_cart_nlp.processor import Processor
 app = Flask(__name__)
 
 
+@app.route('/', methods=['GET'])
+@app.route('/info', methods=['GET'])
+def name():
+    return flask.jsonify({
+        'title': 'Projekt z Podstaw przetwarzania jezyka naturalnego [NLP]',
+        'semester': '21L',
+        'authors': ['Przemyslaw Stawczyk', 'Kamil Zacharczuk'],
+        'status': 'running'
+    }), 200
+
+
 @app.route("/product", methods=['GET'])
 def get_products():
     return {"products": database.get_products()}
+
+
+@app.route('/product/<prod_id>', methods=['GET'])
+def get_one_product(prod_id):
+    tmp = database.get_product(prod_id)
+    if tmp is None:
+        abort(400)
+    else:
+        return flask.jsonify(tmp)
 
 
 @app.route("/product", methods=['POST'])

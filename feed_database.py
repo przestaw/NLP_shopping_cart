@@ -18,5 +18,5 @@ if __name__ == '__main__':
     database.init_schema()
     database.add_products(products=products)
 
-    processor = Processor(database=database)
-    processor.learn_from_db()
+    #processor = Processor(database=database)
+    #processor.learn_from_db()
