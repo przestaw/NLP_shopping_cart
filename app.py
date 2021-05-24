@@ -86,7 +86,4 @@ if __name__ == '__main__':
     database = DBaccess()
     processor = Processor(database)
 
-    processor.learn_from_db()
-    print("Index created.")
-
     app.run(debug=True)

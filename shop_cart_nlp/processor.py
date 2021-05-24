@@ -17,7 +17,8 @@ class Processor:
     not_scalable_units = [
         "", "watt", "percentage", "yard", "year", "minute", "hour", "second", "byte", "decade", "megayear nanoseconds",
         "furlong", "dollar", "week", "week seconds", "atomic mass unit poise farads", "centavo ounce years", "degree",
-        "milliampere nanoseconds", "inch second exaampere metres", "dime watt south african rands", "centavo", "dime watt roentgens",
+        "milliampere nanoseconds", "inch second exaampere metres", "dime watt south african rands", "centavo",
+        "dime watt roentgens",
         "degree celsius"
     ]
     dimensionless = "dimensionless"
@@ -206,10 +207,12 @@ class Processor:
             # NOTE : str() conversion to match type
             unit = self.dictionary.get(str(q.unit))
             if unit:
-                amount = product.amount * self.dictionary.get(str(product.unit)) \
-                    if self.dictionary.get(product.unit) \
-                    else product.amount
-                return ceil(unit / amount * quants[0].value)
+                if self.dictionary.get(product.unit):
+                    amount = product.amount * self.dictionary.get(str(product.unit))
+                else:
+                    amount = product.amount
+
+                return ceil((unit * quants[0].value)/ amount)
 
         # not a product unit nor non-numerical word for quantity
         return ceil(quants[0].value)
