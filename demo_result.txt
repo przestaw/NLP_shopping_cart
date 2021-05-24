@@ -1,0 +1,158 @@
+# get project info
+{
+  "authors": [
+    "Przemyslaw Stawczyk", 
+    "Kamil Zacharczuk"
+  ], 
+  "semester": "21L", 
+  "status": "running", 
+  "title": "Projekt z Podstaw przetwarzania jezyka naturalnego [NLP]"
+}
+# product with id 182
+{
+  "amount": 1.0, 
+  "description": " \"Enriched Elbow Macaroni - The Kroger Co.\"", 
+  "name": "ENRICHED ELBOW MACARONI", 
+  "prod_id": 175, 
+  "unit": "dimensionless"
+}
+# get prediction for list : ["10 Sweet sweet butter", "Some fresh green peas", "five sweet brownie"]
+{
+  "products": [
+    {
+      "count": 10, 
+      "product": {
+        "amount": 1.0, 
+        "description": " \"Sweet Finishing Butter - The Kroger Co.\"", 
+        "name": "SWEET FINISHING BUTTER", 
+        "prod_id": 159, 
+        "unit": "dimensionless"
+      }
+    }, 
+    {
+      "count": 1, 
+      "product": {
+        "amount": 1.0, 
+        "description": " \"Fresh & Easy", 
+        "name": "FRESH & EASY, GREEN SPLIT PEAS", 
+        "prod_id": 128, 
+        "unit": "dimensionless"
+      }
+    }, 
+    {
+      "count": 5, 
+      "product": {
+        "amount": 1.0, 
+        "description": " \"Plain Brownie Bites - Csm Bakery Products Na", 
+        "name": "PLAIN BROWNIE BITES", 
+        "prod_id": 177, 
+        "unit": "dimensionless"
+      }
+    }
+  ]
+}
+# get prediction for list : ["Two clean cotton sweatshirts", "One regular fit blue cotton denim jeans"]
+{
+  "products": [
+    {
+      "count": 2, 
+      "product": {
+        "amount": 1.0, 
+        "description": " \"Clean as a Wingate splitter. Our Elias is made from a welcoming blend of 95% organic cotton and 5% spandex in an athletic", 
+        "name": "Elias fz sweatshirt", 
+        "prod_id": 402, 
+        "unit": "dimensionless"
+      }
+    }, 
+    {
+      "count": 1, 
+      "product": {
+        "amount": 10.0, 
+        "description": " \"100% organic cotton denim and an obsession with detail make these the right jeans for just about any occasion. The rugged yet soft 10-oz organic cotton denim breaks in just right", 
+        "name": "Reg fit organic ctn jeans-long", 
+        "prod_id": 459, 
+        "unit": "ounce"
+      }
+    }
+  ]
+}
+# get prediction for list : ["Dozen organic eggs", "1.5l of skimmed milk", "3 kg of flour"]
+{
+  "products": [
+    {
+      "count": 1, 
+      "product": {
+        "amount": 6.0, 
+        "description": " \"6-pack of fresh organic eggs\"", 
+        "name": "6 EGGS", 
+        "prod_id": 221, 
+        "unit": "set"
+      }
+    }, 
+    {
+      "count": 3, 
+      "product": {
+        "amount": 0.5, 
+        "description": " \"Tasty skimmed milk 0.5l\"", 
+        "name": "SKIMMED MILK 2%", 
+        "prod_id": 222, 
+        "unit": "cubic decimetre"
+      }
+    }, 
+    {
+      "count": 6, 
+      "product": {
+        "amount": 0.5, 
+        "description": " \"Baking flour 0.5 kg type 400\"", 
+        "name": "FLOUR - 0.5kg", 
+        "prod_id": 224, 
+        "unit": "kilogram"
+      }
+    }
+  ]
+}
+# get prediction for list : ["La La Land on dvd", "That movie about kidnapped girls trying to escape", "some popcorn", "Guardians of the galaxy the movie"]
+{
+  "products": [
+    {
+      "count": 1, 
+      "product": {
+        "amount": 1.0, 
+        "description": " \"A jazz pianist falls for an aspiring actress in Los Angeles.\"", 
+        "name": "DVD movie: La La Land (2016)", 
+        "prod_id": 232, 
+        "unit": "dimensionless"
+      }
+    }, 
+    {
+      "count": 1, 
+      "product": {
+        "amount": 1.0, 
+        "description": " \"Three girls are kidnapped by a man with a diagnosed 23 distinct personalities. They must try to escape before the apparent emergence of a frightful new 24th.\"", 
+        "name": "DVD movie: Split (2016)", 
+        "prod_id": 228, 
+        "unit": "dimensionless"
+      }
+    }, 
+    {
+      "count": 1, 
+      "product": {
+        "amount": 1.0, 
+        "description": " \"Salty corn snack for any movie - popcorn bucket - Tasty Brand", 
+        "name": "Great POPCORN movie bucket", 
+        "prod_id": 225, 
+        "unit": "dimensionless"
+      }
+    }, 
+    {
+      "count": 1, 
+      "product": {
+        "amount": 1.0, 
+        "description": " \"A group of intergalactic criminals are forced to work together to stop a fanatical warrior from taking control of the universe.\"", 
+        "name": "DVD movie: Guardians of the Galaxy (2014)", 
+        "prod_id": 226, 
+        "unit": "dimensionless"
+      }
+    }
+  ]
+}
