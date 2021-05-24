@@ -12,10 +12,8 @@ from shop_cart_nlp.objects import Product
 
 
 class Processor:
-    # stoplist is common for all instances
     stoplist = stopwords.words('english') + ['%', ';', '-', '``', '(', ')', ':', ',', '.', '']
     stemmer = PorterStemmer()
-
     not_scalable_units = [
         "", "watt", "percentage", "yard", "year", "minute", "hour", "second", "byte", "decade", "megayear nanoseconds",
         "furlong", "dollar", "week", "week seconds", "atomic mass unit poise farads", "centavo ounce years", "degree",
@@ -58,7 +56,6 @@ class Processor:
         :param array: array of words
         :return: array with words not present in stoplist
         """
-        # NOTE : we may add our own words to stoplist
         return [w for w in array if w not in cls.stoplist and not (len(w) == 1 and not w.isalnum())]
 
     @classmethod
@@ -81,6 +78,7 @@ class Processor:
         tmp = cls.tokenize(string)
         tmp = cls.apply_stop_list(tmp)
         tmp = cls.apply_stemmer(tmp)
+        tmp = cls.apply_stop_list(tmp)
         return set(tmp)  # only unique
 
     @classmethod

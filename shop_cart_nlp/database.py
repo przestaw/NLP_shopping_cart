@@ -218,8 +218,6 @@ class DBaccess:
 
         q3 = q3[:-1] + ")"
 
-        #print(q1 + q2 + q3)
-
         cur.execute(q1 + q2 + q3)
         cur.connection.commit()
         cur.close()
