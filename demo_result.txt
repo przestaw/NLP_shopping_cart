@@ -8,7 +8,7 @@
   "status": "running", 
   "title": "Projekt z Podstaw przetwarzania jezyka naturalnego [NLP]"
 }
-# product with id 182
+# product with id 175
 {
   "amount": 1.0, 
   "description": " \"Enriched Elbow Macaroni - The Kroger Co.\"", 
