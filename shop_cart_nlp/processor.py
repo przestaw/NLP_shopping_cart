@@ -24,12 +24,12 @@ class Processor:
     dimensionless = "dimensionless"
     # non-numerical words
     dictionary = {
-        "dimensionless": 1,
-        "pair": 2,
-        "dozen": 12,
-        "gross": 144,
-        "long hundred": 120,  # in text also as : "Small gross", "Great hundred"
-        "great gross": 1728,
+        "dimensionless": 1.,
+        "pair": 2.,
+        "dozen": 12.,
+        "gross": 14.4,
+        "long hundred": 120.,  # in text also as : "Small gross", "Great hundred"
+        "great gross": 1728.,
     }
 
     def __init__(self, database: DBaccess):
@@ -188,7 +188,7 @@ class Processor:
         quants = qparser.parse(position)
         # sanity check
         # print(str(quants[0].value) + " unit: " + str(quants[0].unit) if quants else "No quants")
-        return quants if quants else [Quantity(1, self.dimensionless)]
+        return quants if quants else [Quantity(1., self.dimensionless)]
 
     def calculate_count(self, product, quants):
         """
@@ -208,11 +208,11 @@ class Processor:
             unit = self.dictionary.get(str(q.unit))
             if unit:
                 if self.dictionary.get(product.unit):
-                    amount = product.amount * self.dictionary.get(str(product.unit))
+                    amount = float(product.amount) * self.dictionary.get(str(product.unit))
                 else:
-                    amount = product.amount
+                    amount = float(product.amount)
 
-                return ceil((unit * quants[0].value)/ amount)
+                return ceil((unit * float(quants[0].value)) / amount)
 
         # not a product unit nor non-numerical word for quantity
         return ceil(quants[0].value)
